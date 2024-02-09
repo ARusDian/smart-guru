@@ -1,18 +1,15 @@
 "use client"
 import { useEffect, useState } from "react";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 
 export default function full() {
-    const router = useRouter()
+    const router = useRouter();
 
-    const config = new Configuration({
-        apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY as string,
-    });
+    const openai = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY as string, dangerouslyAllowBrowser: true });
 
-    const api = new OpenAIApi(config);
 
     // const api = new ChatGPTAPI({
     //     apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY as string,
@@ -44,13 +41,15 @@ export default function full() {
             .replace("{self.grade}", form.grade)
             .replace("{self.num_questions}", form.num_questions.toString())
             .replace("{self.num_possible_answers}", form.num_possible_answers.toString());
-        const result = await api.createCompletion({
-            model: 'text-davinci-003',
-            prompt: formattedPrompt,
+
+        const result = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo-16k-0613',
+            messages: [{ role: 'user', content: formattedPrompt }],
             max_tokens: 3000,
         }).then((response) => {
             localStorage.removeItem('soal');
-            localStorage.setItem('soal', response.data.choices[0].text?.replace('\n', '') as string);
+            localStorage.setItem('soal', response.choices[0].message.content!.replace(/(\r\n|\n|\r)/gm, ""));
+            console.log(response.choices[0].message.content!.replace(/(\r\n|\n|\r)/gm, ""));
             setStatus("success");
             router.push('/pengerjaan')
         }).catch((err) => {
